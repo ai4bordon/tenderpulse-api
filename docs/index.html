@@ -35,6 +35,11 @@
     <span class="tag">Прототип: бэкенд + веб-интерфейс</span>
   </header>
 
+  <div class="card" style="border-left:4px solid var(--teal); margin-bottom:24px">
+    <p style="margin:0"><strong>Работает живьём:</strong> <a href="https://tenderpulse.veynx.xyz/">https://tenderpulse.veynx.xyz/</a> —
+    это не макет и не скриншот: приложение поднято на своём сервере, с входом, базой и настоящими данными.</p>
+  </div>
+
   <div class="note" style="margin-bottom:24px">
     <strong>Это прототип, а не готовый продукт.</strong> Он показывает, что задача решена целиком:
     работает сервер, работает интерфейс. Осознанно не сделаны продакшн-деплой, интеграции
@@ -79,9 +84,9 @@
 
   <h2>Границы кейса</h2>
   <div class="note">
-    Прототип запускается локально: <code>node server.js</code>, затем <code>http://localhost:3000</code>.
-    Статический хостинг вроде GitHub Pages само приложение не выполнит — ему нужен Node-рантайм.
-    Поэтому на странице только описание, состав кейса и ссылки на код, а живьём приложение смотрится запуском у себя.
+    Приложение поднято на сервере: <a href="https://tenderpulse.veynx.xyz/">https://tenderpulse.veynx.xyz/</a>. Локально запускается так же просто —
+    <code>node server.js</code>, затем <code>http://localhost:3000</code>: зависимостей нет, нужен только Node 20+.
+    Эта страница лежит на статическом хостинге, поэтому здесь описание и ссылки на код, а не сам трекер.
   </div>
 
   <footer>
