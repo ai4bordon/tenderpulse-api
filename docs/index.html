@@ -2,7 +2,7 @@
 <html lang="ru">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ТендерПульс — кейс: Бэкенд + ТЗ для дизайнера</title>
+<title>ТендерПульс — прототип: бэкенд и веб-интерфейс</title>
 <style>
   :root { --deep:#0B2E4F; --teal:#00A9A5; --sun:#FF7A59; --glacier:#4CC9F0; --graphite:#1B2735; --snow:#F4F7FA; --line:#E1E7EF; --muted:#667486; }
   * { box-sizing: border-box; }
@@ -32,20 +32,24 @@
   <header>
     <h1>ТендерПульс</h1>
     <p class="sub">Трекер этапов выполнения заказов: клиенты, пайплайн, отчёты</p>
-    <span class="tag">Бэкенд + ТЗ для дизайнера</span>
+    <span class="tag">Прототип: бэкенд + веб-интерфейс</span>
   </header>
 
+  <div class="note" style="margin-bottom:24px">
+    <strong>Это прототип, а не готовый продукт.</strong> Он показывает, что задача решена целиком:
+    работает сервер, работает интерфейс. Осознанно не сделаны продакшн-деплой, интеграции
+    с внешними сервисами и доработки «на будущее».
+  </div>
+
   <div class="grid">
-    <div class="card"><div class="stat">17</div><div class="stat-label">тестов, все зелёные</div></div>
+    <div class="card"><div class="stat">18</div><div class="stat-label">тестов, все зелёные</div></div>
     <div class="card"><div class="stat">13+</div><div class="stat-label">эндпоинтов API</div></div>
     <div class="card"><div class="stat">0</div><div class="stat-label">внешних зависимостей</div></div>
   </div>
 
-  <h2>Откуда задача</h2>
+  <h2>Веб-интерфейс</h2>
   <div class="card">
-    <p style="margin:0 0 8px"><strong>Заказ Weblancer #1126853, мониторинг этапов выполнения заказов ($2000)</strong></p>
-    <p style="margin:0 0 10px"><a href="https://www.weblancer.net/freelance/mobilnie-prilozheniya-28/mobilnoe-prilozhenie-monitoringa-etapov-vipolneniya-zakazov-1126853/">ссылка на источник</a></p>
-    <p style="margin:0; color:var(--muted)">По ТЗ заказчика: постановка в работу, информирование о стадиях и сроках, обмен информацией с исполнителями</p>
+    <p style="margin:0">Три экрана: дашборд с воронкой этапов и загрузкой исполнителей, список заказов с фильтрами, справочник клиентов. Интерфейс отдаёт тот же сервер, что и API: отдельной сборки нет.</p>
   </div>
 
   <h2>Что умеет</h2>
@@ -61,25 +65,28 @@
   <div class="card">
     <p style="margin:0 0 8px">Нужен только Node.js 20+ — зависимостей нет, сборки нет.</p>
     <p style="margin:0 0 8px"><code>node server.js</code> — сервис поднимется и создаст демо-данные при первом запуске.</p>
+    <p style="margin:0 0 8px">Откройте <code>http://localhost:3000</code> — это и есть интерфейс со скриншотов выше.</p>
     <p style="margin:0 0 8px"><code>node --test test/app.test.mjs</code> — прогон тестов.</p>
     <p style="margin:0; color:var(--muted)">Демо-доступ: anna@tenderpulse.ru (администратор), maxim@tenderpulse.ru (менеджер), ilya@tenderpulse.ru (исполнитель); пароль — в консоли сервера, целиком — GET /api/demo</p>
   </div>
 
   <h2>Состав кейса</h2>
   <div class="grid">
-    <div class="card"><strong>Код</strong><p style="margin:6px 0 0; color:var(--muted)"><code>src/app.js</code> — домен и права, <code>server.js</code> — HTTP, <code>test/</code> — проверки</p></div>
+    <div class="card"><strong>Код</strong><p style="margin:6px 0 0; color:var(--muted)"><code>src/app.js</code> — домен и права, <code>server.js</code> — HTTP и статика, <code>frontend/</code> — интерфейс, <code>test/</code> — проверки</p></div>
     <div class="card"><strong><a href="https://github.com/ai4bordon/tenderpulse-api/blob/main/%D0%A2%D0%97_%D0%B4%D0%BB%D1%8F_%D0%B4%D0%B8%D0%B7%D0%B0%D0%B9%D0%BD%D0%B5%D1%80%D0%B0.md">ТЗ для дизайнера</a></strong><p style="margin:6px 0 0; color:var(--muted)">Функциональные требования и user flow. Визуальных решений в задании нет намеренно — их предлагает дизайнер</p></div>
-    <div class="card"><strong><a href="https://github.com/ai4bordon/tenderpulse-api/blob/main/README.md">README</a></strong><p style="margin:6px 0 0; color:var(--muted)">Запуск, таблица эндпоинтов, примеры запросов и ответов, что осознанно не вошло в MVP</p></div>
+    <div class="card"><strong><a href="https://github.com/ai4bordon/tenderpulse-api/blob/main/README.md">README</a></strong><p style="margin:6px 0 0; color:var(--muted)">Запуск, таблица эндпоинтов, примеры запросов и ответов, что осознанно не вошло в прототип</p></div>
   </div>
 
   <h2>Границы кейса</h2>
   <div class="note">
-    Это бэкенд: интерфейса здесь нет. Вёрстка и визуальный слой — отдельный этап по ТЗ для дизайнера.
-    Публичный адрес нужен только для запуска с Node-рантаймом (Railway, Render и подобные): статический хостинг API не выполнит.
+    Прототип запускается локально: <code>node server.js</code>, затем <code>http://localhost:3000</code>.
+    Статический хостинг вроде GitHub Pages само приложение не выполнит — ему нужен Node-рантайм.
+    Поэтому на странице только описание, состав кейса и ссылки на код, а живьём приложение смотрится запуском у себя.
   </div>
 
   <footer>
-    Учебный кейс по курсу «Фриланс с гарантией дохода» · урок FGIp07 · 15.09.2026
+    <a href="https://github.com/ai4bordon/tenderpulse-api">Исходный код на GitHub</a> ·
+    Учебный кейс по курсу «Фриланс с гарантией дохода» · урок FGIp07 · 16.09.2026
   </footer>
 </div>
 </html>
