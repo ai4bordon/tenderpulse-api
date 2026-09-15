@@ -94,6 +94,9 @@ const server = http.createServer(async (req, res) => {
       const ext = path.extname(full);
       res.writeHead(200, {
         "Content-Type": MIME_STATIC[ext] || "application/octet-stream",
+        // Статику всегда перепроверяем: иначе браузер может держать старый JS
+        // после обновления, и интерфейс ведёт себя «как сломанный».
+        "Cache-Control": "no-cache",
       });
       fs.createReadStream(full).pipe(res);
       return;
