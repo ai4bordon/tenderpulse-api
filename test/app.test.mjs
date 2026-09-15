@@ -100,6 +100,7 @@ test("2. Сотрудников создаёт администратор, ро�
       email: "petr@tenderpulse.ru",
       role: "executor",
       position: "Юрист по закупкам",
+      password: "secret12",
     },
   });
   assert.equal(created.status, 201);
@@ -1131,4 +1132,59 @@ test("17. Назначение исполнителя: ошибки не мол�
     body: { executorId: "u2" },
   });
   assert.equal(wrongRole.status, 422, "менеджера исполнителем не назначают");
+});
+
+test("18. Удалённые сущности не отдают свои id новым", () => {
+  const { app, login } = setup();
+  const admin = login(ADMIN);
+  const manager = login(MANAGER);
+
+  const orders = app.dispatch("GET", "/api/orders", { token: manager }).body
+    .orders;
+  const victim = orders[orders.length - 1];
+  assert.equal(
+    app.dispatch("DELETE", `/api/orders/${victim.id}`, { token: admin })
+      .status,
+    200,
+  );
+  const recreated = app.dispatch("POST", "/api/orders", {
+    token: manager,
+    body: { title: "Новый заказ", clientId: "c1", stageDueDate: shift(5) },
+  });
+  assert.equal(recreated.status, 201);
+  assert.notEqual(
+    recreated.body.order.id,
+    victim.id,
+    "id удалённого заказа не переиспользуется",
+  );
+
+  const temp = app.dispatch("POST", "/api/clients", {
+    token: manager,
+    body: { name: "Временный клиент" },
+  });
+  assert.equal(temp.status, 201);
+  assert.equal(
+    app.dispatch("DELETE", `/api/clients/${temp.body.client.id}`, {
+      token: admin,
+    }).status,
+    200,
+  );
+  const temp2 = app.dispatch("POST", "/api/clients", {
+    token: manager,
+    body: { name: "Временный клиент" },
+  });
+  assert.notEqual(
+    temp2.body.client.id,
+    temp.body.client.id,
+    "id удалённого клиента не переиспользуется",
+  );
+
+  assert.equal(
+    app.dispatch("POST", "/api/users", {
+      token: admin,
+      body: { name: "Без пароля", email: "nopass@tenderpulse.ru" },
+    }).status,
+    400,
+    "пароль обязателен",
+  );
 });

@@ -502,6 +502,12 @@ export function demoData(today = new Date()) {
     }
   }
 
+  const seq = {
+    users: maxSuffix(users, "u"),
+    clients: maxSuffix(clients, "c"),
+    orders: maxSuffix(orders, "o"),
+  };
+
   return {
     users,
     clients,
@@ -509,6 +515,7 @@ export function demoData(today = new Date()) {
     history,
     comments,
     sessions: {},
+    seq,
     notifications: [
       {
         id: "n-demo-1",
@@ -560,6 +567,37 @@ export function createStore(initial, { file = null, fs = null } = {}) {
 }
 
 // ---------- права доступа ----------
+
+/** Максимальный числовой суффикс id вида `o12` — стартовая точка счётчика. */
+function maxSuffix(items, prefix) {
+  let max = 0;
+  for (const it of items) {
+    if (typeof it.id === "string" && it.id.startsWith(prefix)) {
+      const n = Number(it.id.slice(prefix.length));
+      if (Number.isInteger(n)) max = Math.max(max, n);
+    }
+  }
+  return max;
+}
+
+/** Монотонный счётчик id: после удаления сущности id не переиспользуются,
+    иначе новая сущность унаследует ссылки удалённой (заказы, комментарии, история).
+    Старые хранилища без `seq` подхватываются сами: берётся максимум существующих id. */
+function nextId(state, key, prefix, items) {
+  if (!state.seq) state.seq = {};
+  if (!Number.isInteger(state.seq[key])) {
+    let max = 0;
+    for (const it of items) {
+      if (typeof it.id === "string" && it.id.startsWith(prefix)) {
+        const n = Number(it.id.slice(prefix.length));
+        if (Number.isInteger(n)) max = Math.max(max, n);
+      }
+    }
+    state.seq[key] = max;
+  }
+  state.seq[key] += 1;
+  return `${prefix}${state.seq[key]}`;
+}
 
 const isAdmin = (user) => user.role === "admin";
 const isManager = (user) => user.role === "manager";
@@ -910,13 +948,16 @@ export function createApp({ store, today = () => new Date() }) {
     if (!name || !email) return error(400, "Нужны имя и почта");
     if (s.users.some((u) => u.email.toLowerCase() === email.toLowerCase()))
       return error(409, "Такая почта уже занята");
+    const password = String(body.password || "");
+    if (password.length < 6)
+      return error(400, "Укажите пароль не короче 6 символов");
     const created = {
-      id: `u${s.users.length + 1}`,
+      id: nextId(s, "users", "u", s.users),
       name,
       email,
       role: ROLES.includes(body.role) ? body.role : "executor",
       position: String(body.position || "").trim(),
-      password: hashPassword(String(body.password || "tenderpulse")),
+      password: hashPassword(password),
       createdAt: stamp(),
     };
     s.users.push(created);
@@ -1001,7 +1042,7 @@ export function createApp({ store, today = () => new Date() }) {
     const name = String(body.name || "").trim();
     if (!name) return error(400, "Нужно название клиента");
     const client = {
-      id: `c${s.clients.length + 1}`,
+      id: nextId(s, "clients", "c", s.clients),
       name,
       contactName: String(body.contactName || "").trim(),
       email: String(body.email || "").trim(),
@@ -1148,7 +1189,7 @@ export function createApp({ store, today = () => new Date() }) {
       return error(404, "Менеджер не найден");
     const num = s.orders.length + 1001;
     const order = {
-      id: `o${s.orders.length + 1}`,
+      id: nextId(s, "orders", "o", s.orders),
       number: `ЗК-${num}`,
       title,
       description: String(body.description || ""),

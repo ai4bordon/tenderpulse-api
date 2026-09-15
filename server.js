@@ -25,9 +25,19 @@ function loadStore() {
 const store = createStore(loadStore(), { file: STORE_FILE, fs });
 const app = createApp({ store });
 
+/** Лимит тела запроса (AUD-02): без него один большой POST кладёт процесс —
+    чанки копятся в памяти без границ. 1 МБ с запасом покрывает честные тела
+    этого API (заказы, клиенты, комментарии). */
+const MAX_BODY = 1_000_000;
+
 const readBody = async (req) => {
   let raw = "";
-  for await (const chunk of req) raw += chunk;
+  let size = 0;
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > MAX_BODY) return "TOO_LARGE";
+    raw += chunk;
+  }
   if (!raw) return {};
   try {
     return JSON.parse(raw);
@@ -121,6 +131,8 @@ const server = http.createServer(async (req, res) => {
     req.method === "GET" || req.method === "DELETE" ? {} : await readBody(req);
   if (body === null)
     return send(400, { error: "Некорректный JSON в теле запроса" });
+  if (body === "TOO_LARGE")
+    return send(413, { error: "Тело запроса слишком большое (лимит 1 МБ)" });
 
   const result = app.dispatch(req.method, pathname, { body, token });
   return send(result.status, result.body);
