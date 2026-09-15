@@ -59,10 +59,11 @@ const daysLeft = (due, today) =>
   due ? Math.ceil((startOfDay(new Date(due)) - startOfDay(today)) / DAY) : null;
 
 /** Демонстрационные данные: агентство ведёт закупки и тендеры для клиентов. */
-export function demoData(today = new Date()) {
+export function demoData(today = new Date(), demoPassword) {
+  if (!demoPassword) throw new Error("demoData: укажите пароль демо-учёток");
   const day = (shift) =>
     new Date(startOfDay(today).getTime() + shift * DAY).toISOString();
-  const password = hashPassword("tenderpulse");
+  const password = hashPassword(demoPassword);
   const users = [
     {
       id: "u1",
@@ -516,6 +517,15 @@ export function demoData(today = new Date()) {
     comments,
     sessions: {},
     seq,
+    meta: {
+      demo: true,
+      demoPassword,
+      demoAccounts: users.map((u) => ({
+        email: u.email,
+        role: u.role,
+        name: u.name,
+      })),
+    },
     notifications: [
       {
         id: "n-demo-1",
@@ -879,6 +889,32 @@ export function createApp({ store, today = () => new Date() }) {
     }
     return error(404, "Маршрут не найден");
   }
+
+  // ---------- демо-доступ ----------
+  // Пароль демо-учёток существует только здесь: генерируется при первом запуске
+  // и показывается в консоли сервера. В репозитории паролей нет.
+  // Только для локального демо: в бою эту ручку удалить.
+  route(
+    "GET",
+    "/api/demo",
+    () => {
+      const meta = state().meta;
+      if (!meta || !meta.demoPassword) {
+        return error(
+          404,
+          "Демо-данные отсутствуют: удалите data/store.json и перезапустите сервер",
+        );
+      }
+      return {
+        status: 200,
+        body: {
+          password: meta.demoPassword,
+          accounts: meta.demoAccounts,
+        },
+      };
+    },
+    { public: true },
+  );
 
   // ---------- авторизация ----------
   route(

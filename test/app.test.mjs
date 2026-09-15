@@ -2,18 +2,23 @@
 // Тесты ходят в ядро напрямую — порт не поднимается, данные не пишутся на диск.
 import test from "node:test";
 import assert from "node:assert/strict";
+import { randomBytes } from "node:crypto";
 import { createApp, createStore, demoData, STAGES } from "../src/app.js";
 
 const TODAY = new Date("2026-03-10T09:00:00Z");
 const DAY = 24 * 60 * 60 * 1000;
 const shift = (days) => new Date(TODAY.getTime() + days * DAY).toISOString();
 
+// Пароль демо-учёток генерируется на каждый прогон — в тестах, как и в проде,
+// статических паролей нет.
+const PW = randomBytes(8).toString("hex");
+
 function setup() {
-  const store = createStore(demoData(TODAY));
+  const store = createStore(demoData(TODAY, PW));
   const app = createApp({ store, today: () => TODAY });
   const login = (email) =>
     app.dispatch("POST", "/api/login", {
-      body: { email, password: "tenderpulse" },
+      body: { email, password: PW },
     }).body.token;
   return { app, store, login };
 }
@@ -1141,10 +1146,9 @@ test("18. Удалённые сущности не отдают свои id но
 
   const orders = app.dispatch("GET", "/api/orders", { token: manager }).body
     .orders;
-  const victim = orders[orders.length - 1];
+  const victim = orders.at(-1);
   assert.equal(
-    app.dispatch("DELETE", `/api/orders/${victim.id}`, { token: admin })
-      .status,
+    app.dispatch("DELETE", `/api/orders/${victim.id}`, { token: admin }).status,
     200,
   );
   const recreated = app.dispatch("POST", "/api/orders", {

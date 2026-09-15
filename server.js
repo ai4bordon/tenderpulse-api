@@ -6,23 +6,41 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createApp, createStore, demoData } from "./src/app.js";
+import { randomBytes } from "node:crypto";
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const STORE_FILE = path.join(ROOT, "data", "store.json");
 const PORT = Number(process.env.PORT || 3000);
+const FRONTEND_DIR = path.join(ROOT, "frontend");
+const MIME_STATIC = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".png": "image/png",
+  ".svg": "image/svg+xml",
+  ".json": "application/json",
+  ".woff2": "font/woff2",
+};
 
 function loadStore() {
   try {
-    return JSON.parse(fs.readFileSync(STORE_FILE, "utf8"));
+    return {
+      data: JSON.parse(fs.readFileSync(STORE_FILE, "utf8")),
+      fresh: false,
+    };
   } catch {
-    const data = demoData();
+    // Первый запуск: генерируем пароль демо-учёток здесь и сейчас.
+    // В репозитории его нет и не будет; единственный экземпляр — в консоли ниже.
+    const demoPassword = randomBytes(4).toString("hex");
+    const data = demoData(undefined, demoPassword);
     fs.mkdirSync(path.dirname(STORE_FILE), { recursive: true });
     fs.writeFileSync(STORE_FILE, JSON.stringify(data, null, 2));
-    return data;
+    return { data, fresh: true, demoPassword };
   }
 }
 
-const store = createStore(loadStore(), { file: STORE_FILE, fs });
+const boot = loadStore();
+const store = createStore(boot.data, { file: STORE_FILE, fs });
 const app = createApp({ store });
 
 /** Лимит тела запроса (AUD-02): без него один большой POST кладёт процесс —
@@ -62,8 +80,29 @@ const server = http.createServer(async (req, res) => {
   const pathname = req.url || "/";
   const token = req.headers["x-token"] || null;
 
-  // Корень отдаёт карту API — удобно для проверки и для портфолио.
-  if (pathname === "/") {
+  // Веб-интерфейс лежит в frontend/ и раздаётся как статика.
+  // API живёт только под /api/; карта API — на GET /api.
+  if (pathname !== "/api" && !pathname.startsWith("/api/")) {
+    const name =
+      pathname === "/" ? "index.html" : pathname.replace(/\.\./g, "");
+    const full = path.join(FRONTEND_DIR, name);
+    if (
+      full.startsWith(FRONTEND_DIR) &&
+      fs.existsSync(full) &&
+      fs.statSync(full).isFile()
+    ) {
+      const ext = path.extname(full);
+      res.writeHead(200, {
+        "Content-Type": MIME_STATIC[ext] || "application/octet-stream",
+      });
+      fs.createReadStream(full).pipe(res);
+      return;
+    }
+    return send(404, { error: "Неизвестный адрес" });
+  }
+
+  // Карта API — удобно для проверки и для портфолио.
+  if (pathname === "/api") {
     return send(200, {
       service: "ТендерПульс API — трекер этапов выполнения заказов",
       version: "1.0.0",
@@ -83,9 +122,12 @@ const server = http.createServer(async (req, res) => {
         { email: "maxim@tenderpulse.ru", role: "manager" },
         { email: "ilya@tenderpulse.ru", role: "executor" },
       ],
-      password: "tenderpulse",
+      password: undefined,
+      demoNote:
+        "Пароль демо-учёток — в консоли сервера при первом запуске; в репозитории паролей нет",
       authHeader: "X-Token: <token из POST /api/login>",
       endpoints: [
+        "GET /api/demo",
         "POST /api/login",
         "POST /api/logout",
         "GET /api/me",
@@ -124,9 +166,6 @@ const server = http.createServer(async (req, res) => {
     });
   }
 
-  if (!pathname.startsWith("/api/"))
-    return send(404, { error: "Неизвестный адрес" });
-
   const body =
     req.method === "GET" || req.method === "DELETE" ? {} : await readBody(req);
   if (body === null)
@@ -140,5 +179,11 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`ТендерПульс API: http://localhost:${PORT}`);
-  console.log("Демо-вход: anna@tenderpulse.ru / tenderpulse (администратор)");
+  if (boot.fresh) {
+    console.log(`Демо-пароль (показан один раз, сохраните): ${boot.demoPassword}`);
+    console.log("Демо-учётки целиком — GET /api/demo. Пароль действует, пока жив data/store.json.");
+  } else {
+    console.log("Демо-данные уже есть. Пароль — тот, что был выдан при первом запуске.");
+    console.log("Потеряли пароль: удалите data/store.json и перезапустите сервер.");
+  }
 });
