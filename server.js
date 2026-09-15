@@ -180,10 +180,18 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`ТендерПульс API: http://localhost:${PORT}`);
   if (boot.fresh) {
-    console.log(`Демо-пароль (показан один раз, сохраните): ${boot.demoPassword}`);
-    console.log("Демо-учётки целиком — GET /api/demo. Пароль действует, пока жив data/store.json.");
+    console.log(
+      `Демо-пароль (показан один раз, сохраните): ${boot.demoPassword}`,
+    );
+    console.log(
+      "Демо-учётки целиком — GET /api/demo. Пароль действует, пока жив data/store.json.",
+    );
   } else {
-    console.log("Демо-данные уже есть. Пароль — тот, что был выдан при первом запуске.");
-    console.log("Потеряли пароль: удалите data/store.json и перезапустите сервер.");
+    console.log(
+      "Демо-данные уже есть. Пароль — тот, что был выдан при первом запуске.",
+    );
+    console.log(
+      "Потеряли пароль: удалите data/store.json и перезапустите сервер.",
+    );
   }
 });

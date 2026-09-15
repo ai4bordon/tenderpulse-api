@@ -25,6 +25,38 @@ export const ROLE_TITLES = {
 export const CLIENT_STATUSES = ["active", "archived"];
 // Этапы, которые исполнитель ведёт сам: постановка в работу и отправка на проверку.
 export const EXECUTOR_STAGES = ["in_progress", "on_review"];
+const FIELD_TITLES = {
+  created: "создан",
+  stage: "этап",
+  executorId: "исполнитель",
+  managerId: "менеджер",
+  clientId: "клиент",
+  stageDueDate: "срок этапа",
+  dueDate: "срок",
+  title: "название",
+  description: "описание",
+  amount: "бюджет",
+};
+
+/** Человекочитаемое значение из истории: id пользователей раскрываются в имена. */
+function refName(value, users) {
+  if (value == null || value === "") return "—";
+  const user = (users || []).find((u) => u.id === value);
+  return user ? user.name : String(value);
+}
+
+/** Человекочитаемая строка истории для ленты: коды этапов и полей
+    переводятся на русский, id пользователей раскрываются в имена. */
+function historyText(h, users) {
+  if (h.field === "stage") {
+    return `этап «${STAGE_TITLES[h.from]}» → «${STAGE_TITLES[h.to]}»`;
+  }
+  if (h.field === "created") {
+    return "заказ создан";
+  }
+  const label = FIELD_TITLES[h.field] || h.field;
+  return `${label}: ${refName(h.from, users)} → ${refName(h.to, users)}`;
+}
 
 const DAY = 24 * 60 * 60 * 1000;
 const HOUR = 60 * 60 * 1000;
@@ -1743,6 +1775,7 @@ export function createApp({ store, today = () => new Date() }) {
           number: o.number,
           title: o.title,
           stage: o.stage,
+          stageTitle: o.stageTitle,
           stageDueDate: o.stageDueDate,
           executor: o.executor?.name ?? null,
           daysLeft: daysLeft(o.stageDueDate, day),
@@ -1793,10 +1826,7 @@ export function createApp({ store, today = () => new Date() }) {
             orderId: h.orderId,
             at: h.at,
             user: userById(h.userId)?.name ?? "—",
-            text:
-              h.field === "stage"
-                ? `этап «${STAGE_TITLES[h.from]}» → «${STAGE_TITLES[h.to]}»`
-                : `${h.field}: ${h.from ?? "—"} → ${h.to ?? "—"}`,
+            text: historyText(h, s.users),
           })),
         reports: isStaff(user),
       },
